@@ -3,32 +3,45 @@
 
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-unstable";
-    mach-nix.url = "github:DavHau/mach-nix";
+    poetry2nix.url = "github:nix-community/poetry2nix";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-   outputs = { self, nixpkgs, flake-utils, mach-nix }:
-     let
-       python = "python39";
+  outputs = { self, nixpkgs, flake-utils, poetry2nix }:
+    let
+      name = "binfootprint";
+    in {
+      overlay = nixpkgs.lib.composeManyExtensions [
+        poetry2nix.overlay
+        (final: prev: {
+          ${name} = (prev.poetry2nix.mkPoetryApplication {
+            projectDir = ./.;
+            doCheck = false;
+          });
+        })
 
-     in flake-utils.lib.eachSystem ["x86_64-linux"] (system:
-       let
-         pkgs = nixpkgs.legacyPackages.${system};
-         mach-nix-wrapper = import mach-nix { inherit pkgs python;  };
+      ];
+    } // (flake-utils.lib.eachDefaultSystem (system:
+      let
+        pkgs = import nixpkgs {
+          inherit system;
+          overlays = [ self.overlay ];
+        };
+      in
+        rec {
+          packages = {
+            ${name} = pkgs.${name};
+          };
 
-         binfootprint = (mach-nix-wrapper.buildPythonPackage {
-           src = ./.;
-         });
+          defaultPackage = packages.${name};
+          devShell = (pkgs.poetry2nix.mkPoetryEnv {
+            projectDir = ./.;
 
-         pythonShell = mach-nix-wrapper.mkPython {
-           packagesExtra = [binfootprint];
-         };
-
-       in {
-         devShell = pkgs.mkShell {
-           buildInputs = with pkgs; [pythonShell black pyright];
-         };
-
-         defaultPackage = binfootprint;
-       });
+            editablePackageSources = {
+              ${name} = ./${name};
+            };
+          }).env.overrideAttrs (oldAttrs: {
+            buildInputs = [ pkgs.poetry pkgs.black pkgs.pyright ];
+          });
+        }));
 }
