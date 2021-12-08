@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "binfootprint"
+version = "0.1.0"
+description = "binary representation for simple data structures"
+authors = ["Richard Hartmann <richard.hartmann@tu-dresden.de>"]
+license = "BSD (3 clause)"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<3.11"
+numpy = "^1.5.1"
+
+[tool.poetry.dev-dependencies]
+#mypy = "*"
+#black = "*"
