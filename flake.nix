@@ -17,6 +17,7 @@
           ${name} = (prev.poetry2nix.mkPoetryApplication {
             projectDir = ./.;
             doCheck = false;
+            preferWheels = true;
           });
         })
 
