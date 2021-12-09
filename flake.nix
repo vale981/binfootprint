@@ -1,48 +1,17 @@
 {
   description = "binary representation for simple data structures";
-
   inputs = {
+    utils.url = "github:vale981/hiro-flake-utils";
     nixpkgs.url = "nixpkgs/nixos-unstable";
-    poetry2nix.url = "github:nix-community/poetry2nix";
-    flake-utils.url = "github:numtide/flake-utils";
+
+    fcSpline.url = "github:vale981/fcSpline";
   };
 
-  outputs = { self, nixpkgs, flake-utils, poetry2nix }:
-    let
+  outputs = inputs@{ self, utils, nixpkgs, ... }:
+    (utils.lib.poetry2nixWrapper nixpkgs inputs {
       name = "binfootprint";
-    in {
-      overlay = nixpkgs.lib.composeManyExtensions [
-        poetry2nix.overlay
-        (final: prev: {
-          ${name} = (prev.poetry2nix.mkPoetryApplication {
-            projectDir = ./.;
-            doCheck = false;
-            preferWheels = true;
-          });
-        })
-
-      ];
-    } // (flake-utils.lib.eachDefaultSystem (system:
-      let
-        pkgs = import nixpkgs {
-          inherit system;
-          overlays = [ self.overlay ];
-        };
-      in
-        rec {
-          packages = {
-            ${name} = pkgs.${name};
-          };
-
-          defaultPackage = packages.${name};
-          devShell = (pkgs.poetry2nix.mkPoetryEnv {
-            projectDir = ./.;
-
-            editablePackageSources = {
-              ${name} = ./${name};
-            };
-          }).env.overrideAttrs (oldAttrs: {
-            buildInputs = [ pkgs.poetry pkgs.black pkgs.pyright ];
-          });
-        }));
+      poetryArgs = {
+        projectDir = ./.;
+      };
+    });
 }
