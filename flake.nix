@@ -3,8 +3,6 @@
   inputs = {
     utils.url = "github:vale981/hiro-flake-utils";
     nixpkgs.url = "nixpkgs/nixos-unstable";
-
-    fcSpline.url = "github:vale981/fcSpline";
   };
 
   outputs = inputs@{ self, utils, nixpkgs, ... }:
