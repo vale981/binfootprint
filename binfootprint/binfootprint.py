@@ -45,6 +45,8 @@ try:
 except ImportError:
     scipy = None
 
+import io
+
 _spec_types = (bool, type(None))
 
 _SPEC       = 0x00    # True, False, None
@@ -357,17 +359,27 @@ def _load_list(b, classes):
 
 def _dump_np_array(np_array):
     b = init_BYTES([_NPARRAY])
-    nparray_bytes = np.ndarray.dumps(np_array)
-    size  = len(nparray_bytes)
-    b += struct.pack('>I', size)
+    memfile = io.BytesIO()
+    np.savetxt(memfile, np_array.flatten(), fmt='%.18e',
+               delimiter=' ', newline='\n',
+               header='', footer='', comments='# ', encoding="latin1")
+    nparray_bytes = dump((str(np_array.dtype), np_array.shape, memfile.getvalue()))
+    size = len(nparray_bytes)
+    b += struct.pack(">I", size)
     b += nparray_bytes
     return b
 
+
 def _load_np_array(b):
     assert comp_id(b[0], _NPARRAY)
-    size = struct.unpack('>I', b[1:5])[0]
-    npa = np_load(b[5: size+5])
-    return npa, size+5
+    memfile = io.BytesIO()
+    size = struct.unpack(">I", b[1:5])[0]
+    dtype_str, shape, txt = load(b[5 : size + 5])
+    memfile.write(txt)
+    memfile.seek(0)
+    npa = np.loadtxt(memfile, dtype=np.dtype(dtype_str),
+                     encoding="latin1", comments='# ').reshape(shape)
+    return npa, size + 5
 
 def _dump_bfkey(ob):
     b = init_BYTES([_BFKEY])

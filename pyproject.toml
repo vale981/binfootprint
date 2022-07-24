@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "binfootprint"
-version = "0.1.0"
+version = "0.2.0"
 description = "binary representation for simple data structures"
 authors = ["Richard Hartmann <richard.hartmann@tu-dresden.de>"]
 license = "BSD (3 clause)"
